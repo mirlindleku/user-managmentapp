@@ -23,6 +23,18 @@ const UserList: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users")
+      .then((res) => res.json())
+      .then((data: User[]) => {
+        setUsers(data);
+      })
+      .catch((err) => {
+        console.error("Error fetching users:", err);
+      });
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,21 +56,26 @@ const UserList: React.FC = () => {
     setEmail("");
     setError("");
   };
-  useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/users")
-      .then((res) => res.json())
-      .then((data: User[]) => {
-        setUsers(data);
-      })
-      .catch((err) => {
-        console.error("Error fetching users:", err);
-      });
-  }, []);
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6 text-center">User List</h2>
 
+      <div className="max-w-md">
+        <Input
+          type="text"
+          placeholder="Search by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="mb-4"
+        />
+      </div>
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Add New User</CardTitle>
@@ -91,7 +108,7 @@ const UserList: React.FC = () => {
         </CardContent>
       </Card>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {users.map((user) => (
+        {filteredUsers.map((user) => (
           <Card key={user.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <a href={`/users/${user.id}`}>
