@@ -6,8 +6,9 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-// Define the User type
 interface User {
   id: number;
   name: string;
@@ -19,7 +20,30 @@ interface User {
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!name.trim() || !email.trim()) {
+      setError("Name and Email are required.");
+      return;
+    }
+
+    const newUser: User = {
+      id: Date.now(),
+      name,
+      email,
+      company: { name: "Local Company" },
+    };
+
+    setUsers([newUser, ...users]);
+    setName("");
+    setEmail("");
+    setError("");
+  };
   useEffect(() => {
     fetch("https://jsonplaceholder.typicode.com/users")
       .then((res) => res.json())
@@ -34,6 +58,38 @@ const UserList: React.FC = () => {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6 text-center">User List</h2>
+
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Add New User</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label className="block text-sm mb-1">Name *</label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">Email *</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email"
+              />
+            </div>
+            <Button type="submit" className="w-full">
+              Add User
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {users.map((user) => (
           <Card key={user.id} className="hover:shadow-lg transition-shadow">
