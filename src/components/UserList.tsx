@@ -38,7 +38,9 @@ const UserList: React.FC = () => {
         {users.map((user) => (
           <Card key={user.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
-              <CardTitle>{user.name}</CardTitle>
+              <a href={`/users/${user.id}`}>
+                <CardTitle>{user.name}</CardTitle>
+              </a>
               <CardDescription>{user.email}</CardDescription>
             </CardHeader>
             <CardContent>
