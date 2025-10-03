@@ -6,6 +6,13 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +31,7 @@ const UserList: React.FC = () => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("name-asc");
 
   useEffect(() => {
     fetch("https://jsonplaceholder.typicode.com/users")
@@ -57,24 +65,53 @@ const UserList: React.FC = () => {
     setError("");
   };
 
-  const filteredUsers = users.filter(
+  let filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  filteredUsers = [...filteredUsers].sort((a, b) => {
+    switch (sortOption) {
+      case "name-asc":
+        return a.name.localeCompare(b.name);
+      case "name-desc":
+        return b.name.localeCompare(a.name);
+      case "email-asc":
+        return a.email.localeCompare(b.email);
+      case "email-desc":
+        return b.email.localeCompare(a.email);
+      default:
+        return 0;
+    }
+  });
 
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-6 text-center">User List</h2>
 
-      <div className="max-w-md">
+      <div className="flex flex-col md:flex-row items-center gap-4 max-w-2xl">
         <Input
           type="text"
           placeholder="Search by name or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="mb-4"
+          className="flex-1"
         />
+
+        <Select
+          onValueChange={(value: string) => setSortOption(value)}
+          value={sortOption}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name-asc">Name (A → Z)</SelectItem>
+            <SelectItem value="name-desc">Name (Z → A)</SelectItem>
+            <SelectItem value="email-asc">Email (A → Z)</SelectItem>
+            <SelectItem value="email-desc">Email (Z → A)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <Card className="max-w-md">
         <CardHeader>
