@@ -1,75 +1,75 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "@/store";
+import type { User } from "../features/usersSlice";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
+  setUsers,
+  addUser,
+  updateUser,
+  deleteUser,
+} from "../features/usersSlice";
+import { Link } from "react-router-dom";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  company: {
-    name: string;
-  };
-}
+import {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectItem,
+  SelectContent,
+} from "@/components/ui/select";
 
 const UserList: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const dispatch = useDispatch<AppDispatch>();
+  const users = useSelector((state: RootState) => state.users.list);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("name-asc");
-
   useEffect(() => {
     fetch("https://jsonplaceholder.typicode.com/users")
       .then((res) => res.json())
-      .then((data: User[]) => {
-        setUsers(data);
-      })
-      .catch((err) => {
-        console.error("Error fetching users:", err);
-      });
-  }, []);
+      .then((data: User[]) => dispatch(setUsers(data)));
+  }, [dispatch]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name.trim() || !email.trim()) {
-      setError("Name and Email are required.");
+      setError("Name and Email required");
       return;
     }
-
     const newUser: User = {
       id: Date.now(),
       name,
       email,
       company: { name: "Local Company" },
     };
-
-    setUsers([newUser, ...users]);
+    dispatch(addUser(newUser));
     setName("");
     setEmail("");
     setError("");
   };
 
+  const handleDelete = (id: number) => {
+    dispatch(deleteUser(id));
+  };
+
+  const handleUpdate = (user: User) => {
+    const updatedName = prompt("Enter new name", user.name);
+    const updatedEmail = prompt("Enter new email", user.email);
+    if (!updatedName || !updatedEmail) return;
+    dispatch(updateUser({ ...user, name: updatedName, email: updatedEmail }));
+  };
+
   let filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (u) =>
+      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
   filteredUsers = [...filteredUsers].sort((a, b) => {
     switch (sortOption) {
       case "name-asc":
@@ -86,8 +86,8 @@ const UserList: React.FC = () => {
   });
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6 text-center">User List</h2>
+    <div className="p-6 space-y-6">
+      <h2 className="text-2xl font-bold">User List</h2>
 
       <div className="flex flex-col md:flex-row items-center gap-4 max-w-2xl">
         <Input
@@ -113,30 +113,22 @@ const UserList: React.FC = () => {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Add User Form */}
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Add New User</CardTitle>
         </CardHeader>
         <CardContent>
-          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-          <form onSubmit={handleSubmit} className="space-y-3">
+          {error && <p className="text-red-500 mb-2">{error}</p>}
+          <form onSubmit={handleAddUser} className="space-y-3">
             <div>
               <label className="block text-sm mb-1">Name *</label>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter name"
-              />
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
               <label className="block text-sm mb-1">Email *</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email"
-              />
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <Button type="submit" className="w-full">
               Add User
@@ -144,26 +136,45 @@ const UserList: React.FC = () => {
           </form>
         </CardContent>
       </Card>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredUsers.map((user) => (
-          <Card key={user.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <a href={`/users/${user.id}`}>
+
+      {/* User List */}
+      <ul className="space-y-4">
+        {filteredUsers.length ? (
+          filteredUsers.map((user: User) => (
+            <Card key={user.id} className="p-4 bg-gray-50">
+              <CardHeader>
                 <CardTitle>{user.name}</CardTitle>
-              </a>
-              <CardDescription>{user.email}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500">
-                Company:{" "}
-                <span className="font-medium text-gray-800">
-                  {user.company.name}
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <p className="text-sm text-gray-600">{user.email}</p>
+                <p className="text-sm">{user.company.name}</p>
+              </CardHeader>
+              <CardContent className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleUpdate(user)}
+                >
+                  Update
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(user.id)}
+                >
+                  Delete
+                </Button>
+                <Link
+                  to={`/users/${user.id}`}
+                  className="ml-auto bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                >
+                  Details
+                </Link>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <p className="text-gray-500">No users found.</p>
+        )}
+      </ul>
     </div>
   );
 };
